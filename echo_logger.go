@@ -110,11 +110,7 @@ func (logger Logger) loggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 						Integer: int64(he.Code),
 						Type:    zapcore.Int64Type,
 					})
-					if he.Internal != nil {
-						logger.With(fields...).Error(he.Internal.Error())
-					} else {
-						logger.With(fields...).Error(he.Message.(string))
-					}
+					logger.With(fields...).Error(he.Error())
 				} else {
 					logger.With(fields...).Error(err.Error())
 				}
