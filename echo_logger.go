@@ -3,6 +3,7 @@ package logger
 import (
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -16,6 +17,7 @@ type (
 	LoggerConfig struct {
 		// Skipper defines a function to skip middleware.
 		Skipper middleware.Skipper
+		pool    *sync.Pool
 	}
 )
 
@@ -27,6 +29,13 @@ func (logger Logger) EchoLogger() echo.MiddlewareFunc {
 }
 
 func (logger Logger) loggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
+
+	config.pool = &sync.Pool{
+		New: func() interface{} {
+			return initFields()
+		},
+	}
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if config.Skipper(c) {
@@ -41,75 +50,35 @@ func (logger Logger) loggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 			}
 			stop := time.Now()
 
-			// fields := make(map[string]interface{})
-			fields := []zap.Field{}
+			fields := config.pool.Get().([]zap.Field)
+			resetFields(fields)
+			defer config.pool.Put(fields)
 
 			id := req.Header.Get(echo.HeaderXRequestID)
 			if id == "" {
 				id = res.Header().Get(echo.HeaderXRequestID)
 			}
-			fields = append(fields, zap.Field{
-				Key:    "append",
-				String: id,
-				Type:   zapcore.StringType,
-			})
-			fields = append(fields, zap.Field{
-				Key:    "host",
-				String: req.Host,
-				Type:   zapcore.StringType,
-			})
-			fields = append(fields, zap.Field{
-				Key:    "uri",
-				String: req.RequestURI,
-				Type:   zapcore.StringType,
-			})
 
-			fields = append(fields, zap.Field{
-				Key:    "method",
-				String: req.Method,
-				Type:   zapcore.StringType,
-			})
-
+			fields[0].String = id
+			fields[1].String = req.Host
+			fields[2].String = req.RequestURI
+			fields[3].String = req.Method
 			p := req.URL.Path
 			if p == "" {
 				p = "/"
 			}
-			fields = append(fields, zap.Field{
-				Key:    "source",
-				String: p,
-				Type:   zapcore.StringType,
-			})
-
-			fields = append(fields, zap.Field{
-				Key:    "latency_human",
-				String: stop.Sub(start).String(),
-				Type:   zapcore.StringType,
-			})
-
+			fields[4].String = p
+			fields[5].String = stop.Sub(start).String()
 			cl := req.Header.Get(echo.HeaderContentLength)
 			if cl == "" {
 				cl = "0"
 			}
-			fields = append(fields, zap.Field{
-				Key:    "bytes_in",
-				String: cl,
-				Type:   zapcore.StringType,
-			})
-
-			fields = append(fields, zap.Field{
-				Key:    "bytes_out",
-				String: strconv.FormatInt(res.Size, 10),
-				Type:   zapcore.StringType,
-			})
-
+			fields[6].String = cl
+			fields[7].String = strconv.FormatInt(res.Size, 10)
 			if err != nil {
 				he, ok := err.(*echo.HTTPError)
 				if ok {
-					fields = append(fields, zap.Field{
-						Key:     "status",
-						Integer: int64(he.Code),
-						Type:    zapcore.Int64Type,
-					})
+					fields[8].Integer = int64(he.Code)
 					logger.With(fields...).Error(he.Error())
 				} else {
 					logger.With(fields...).Error(err.Error())
@@ -117,11 +86,7 @@ func (logger Logger) loggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 				return
 			}
 
-			fields = append(fields, zap.Field{
-				Key:     "status",
-				Integer: int64(res.Status),
-				Type:    zapcore.Int64Type,
-			})
+			fields[8].Integer = int64(res.Status)
 
 			if res.Status == http.StatusOK || res.Status == http.StatusNoContent {
 				logger.With(fields...).Info("success")
@@ -140,5 +105,62 @@ func (logger Logger) loggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 			}
 			return
 		}
+	}
+}
+
+func initFields() []zap.Field {
+	fields := make([]zap.Field, 9)
+	fields[0] = zap.Field{
+		Key:    "append",
+		String: "",
+		Type:   zapcore.StringType,
+	}
+	fields[1] = zap.Field{
+		Key:    "host",
+		String: "",
+		Type:   zapcore.StringType,
+	}
+	fields[2] = zap.Field{
+		Key:    "uri",
+		String: "",
+		Type:   zapcore.StringType,
+	}
+	fields[3] = zap.Field{
+		Key:    "method",
+		String: "",
+		Type:   zapcore.StringType,
+	}
+	fields[4] = zap.Field{
+		Key:    "source",
+		String: "",
+		Type:   zapcore.StringType,
+	}
+	fields[5] = zap.Field{
+		Key:    "latency_human",
+		String: "",
+		Type:   zapcore.StringType,
+	}
+	fields[6] = zap.Field{
+		Key:    "bytes_in",
+		String: "",
+		Type:   zapcore.StringType,
+	}
+	fields[7] = zap.Field{
+		Key:    "bytes_out",
+		String: "",
+		Type:   zapcore.StringType,
+	}
+	fields[8] = zap.Field{
+		Key:     "status",
+		Integer: 0,
+		Type:    zapcore.Int64Type,
+	}
+	return fields
+}
+
+func resetFields(fields []zap.Field) {
+	for _, field := range fields {
+		field.String = ""
+		field.Integer = 0
 	}
 }
