@@ -3,7 +3,7 @@ package logger_test
 import (
 	"testing"
 
-	"gapo.media-storage-service/logger"
+	"github.com/anhle128/logger"
 )
 
 func TestLog(t *testing.T) {
