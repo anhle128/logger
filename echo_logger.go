@@ -76,13 +76,9 @@ func (logger Logger) loggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 			fields[6].String = cl
 			fields[7].String = strconv.FormatInt(res.Size, 10)
 			if err != nil {
-				he, ok := err.(*echo.HTTPError)
-				if ok {
-					fields[8].Integer = int64(he.Code)
-					logger.With(fields...).Error(he.Error())
-				} else {
-					logger.With(fields...).Error(err.Error())
-				}
+				he, _ := err.(*echo.HTTPError)
+				fields[8].Integer = int64(he.Code)
+				logger.With(fields...).Error(he.Internal.Error())
 				return
 			}
 

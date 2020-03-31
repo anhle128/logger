@@ -1,4 +1,6 @@
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
+github.com/anhle128/error v0.0.0-20200331065634-332e8bd4bb89 h1:9xyxNJVSY/2ydlIvLj2gJ+Qj/ivtFAQDfGDXkjEvX64=
+github.com/anhle128/error v0.0.0-20200331065634-332e8bd4bb89/go.mod h1:uwt7EFkDz/xSEGrMOvsYDIGso2rg095NHDOwBwHbIfI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
