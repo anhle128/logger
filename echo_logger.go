@@ -78,7 +78,11 @@ func (logger Logger) loggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 			if err != nil {
 				he, _ := err.(*echo.HTTPError)
 				fields[8].Integer = int64(he.Code)
-				logger.With(fields...).Error(he.Internal.Error())
+				if he.Internal != nil {
+					logger.With(fields...).Error(he.Internal.Error())
+				} else {
+					logger.With(fields...).Error(he.Error())
+				}
 				return
 			}
 
