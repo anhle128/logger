@@ -3,6 +3,7 @@ package logger
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -44,11 +45,17 @@ func (logger Logger) loggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 
 			req := c.Request()
 			res := c.Response()
+
 			start := time.Now()
 			if err = next(c); err != nil {
 				c.Error(err)
 			}
 			stop := time.Now()
+
+			// skip if health request return success
+			if res.Status == http.StatusOK && strings.Contains(req.RequestURI, "health") {
+				return
+			}
 
 			fields := config.pool.Get().([]zap.Field)
 			resetFields(fields)
