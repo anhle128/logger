@@ -95,6 +95,9 @@ func (logger Logger) loggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 
 			fields[8].Integer = int64(res.Status)
 
+			userID := req.Header.Get("user_id")
+			fields[9].String = userID
+
 			if res.Status == http.StatusOK || res.Status == http.StatusNoContent {
 				logger.With(fields...).Info("success")
 			} else {
@@ -116,9 +119,9 @@ func (logger Logger) loggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 }
 
 func initFields() []zap.Field {
-	fields := make([]zap.Field, 9)
+	fields := make([]zap.Field, 10)
 	fields[0] = zap.Field{
-		Key:    "append",
+		Key:    "request_id",
 		String: "",
 		Type:   zapcore.StringType,
 	}
@@ -161,6 +164,11 @@ func initFields() []zap.Field {
 		Key:     "status",
 		Integer: 0,
 		Type:    zapcore.Int64Type,
+	}
+	fields[9] = zap.Field{
+		Key:    "user_id",
+		String: "",
+		Type:   zapcore.StringType,
 	}
 	return fields
 }
