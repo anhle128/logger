@@ -98,7 +98,7 @@ func (logger Logger) loggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 			userID := req.Header.Get("user_id")
 			fields[9].String = userID
 
-			if res.Status == http.StatusOK || res.Status == http.StatusNoContent {
+			if res.Status == http.StatusOK || res.Status == http.StatusNoContent || res.Status == http.StatusMovedPermanently {
 				logger.With(fields...).Info("success")
 			} else {
 				// not log with OPTION and status 204
